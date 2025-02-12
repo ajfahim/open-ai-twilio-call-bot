@@ -16,11 +16,16 @@ if (!OPENAI_API_KEY) {
 
 // Initialize Express
 const app = express();
+
+// Add body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 expressWs(app);
 
 // Constants
 const SYSTEM_MESSAGE =
-  "You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.";
+  'You are a voice assistant for Mary\'s Dental, a dental office located at 123 North Face Place, Anaheim, California. The hours are 8 AM to 5PM daily, but they are closed on Sundays.\n\nMary\'s dental provides dental services to the local Anaheim community. The practicing dentist is Dr. Mary Smith.\n\nYou are tasked with answering questions about the business, and booking appointments. If they wish to book an appointment, your goal is to gather necessary information from callers in a friendly and efficient manner like follows:\n\n1. Ask for their full name.\n2. Ask for the purpose of their appointment.\n3. Request their preferred date and time for the appointment.\n4. Confirm all details with the caller, including the date and time of the appointment.\n\n- Be sure to be kind of funny and witty!\n- Keep all your responses short and simple. Use casual language, phrases like "Umm...", "Well...", and "I mean" are preferred.\n- This is a voice conversation, so keep your responses short, like in a real conversation. Don\'t ramble for too long.';
 const VOICE = "alloy";
 const PORT = process.env.PORT || 5050;
 
@@ -46,9 +51,12 @@ app.get("/", (req, res) => {
 
 // Route for Twilio to handle incoming calls
 app.all("/incoming-call", (req, res) => {
+  console.log("Incoming call received. Request body:", req.body);
+  console.log("Request headers:", req.headers);
+
   const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
                           <Response>
-                              <Say>Please wait while we connect your call to the A. I. voice assistant, powered by AJ Fahim and David.</Say>
+                              <Say>Please wait while we connect your call to the A.I. voice assistant, powered by AJ Fahim and David.</Say>
                               <Pause length="1"/>
                               <Say>O.K. you can start talking!</Say>
                               <Connect>
@@ -56,12 +64,13 @@ app.all("/incoming-call", (req, res) => {
                               </Connect>
                           </Response>`;
 
+  console.log("Sending TwiML response with Stream URL:", `wss://${req.headers.host}/media-stream`);
   res.type("text/xml").send(twimlResponse);
 });
 
 // WebSocket route for media-stream
 app.ws("/media-stream", (ws, req) => {
-  console.log("Client connected");
+  console.log("WebSocket connection attempt received");
 
   // Connection-specific state
   let streamSid = null;
